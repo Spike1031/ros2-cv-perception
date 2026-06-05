@@ -1,6 +1,6 @@
-# YOLO Object Detection and Counting Demo
+# YOLOv8 Object Detection, Counting and Tracking Demo
 
-This project implements a YOLO-based object detection and counting pipeline using Python and OpenCV.
+This project demonstrates a computer vision pipeline for traffic scene perception, including object detection, object counting, and multi-object tracking using YOLOv8 and ByteTrack.
 
 ## Features
 
