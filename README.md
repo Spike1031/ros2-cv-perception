@@ -1,4 +1,4 @@
-# YOLOv8 Object Detection, Counting and Tracking Demo
+# ROS2-Based YOLOv8 Perception Pipeline
 
 This project demonstrates a computer vision pipeline for traffic scene perception, including object detection, object counting, and multi-object tracking using YOLOv8 and ByteTrack.
 
@@ -10,6 +10,8 @@ This project demonstrates a computer vision pipeline for traffic scene perceptio
 - Object counting on videos
 - Output image and video saving
 - Object tracking with ByteTrack
+- ROS2 image publishing pipeline
+- ROS2 YOLO perception node
 
 ## Tech Stack
 
@@ -87,3 +89,86 @@ outputs/
 ### Object tracking
 
 ![tracking](docs/tracking_demo.png)
+
+## ROS2 Perception Pipeline
+
+This project also includes a ROS2-based perception pipeline built on Ubuntu 24.04 and ROS2 Jazzy.
+
+### Pipeline Architecture
+
+```text
+Video File
+    ↓
+image_publisher_node
+    ↓
+/image_raw
+    ↓
+yolo_detector_node
+    ↓
+/detections
+```
+
+### Components
+
+#### image_publisher_node
+
+Publishes video frames to the ROS2 topic:
+
+```text
+/image_raw
+```
+
+#### yolo_detector_node
+
+Subscribes to:
+
+```text
+/image_raw
+```
+
+Runs YOLOv8 inference and publishes detection results to:
+
+```text
+/detections
+```
+
+#### detections topic
+
+Example output:
+
+```text
+Detected 8 objects.
+Detected 7 objects.
+Detected 5 objects.
+```
+
+### ROS2 Commands
+
+Start image publisher:
+
+```bash
+ros2 run cv_perception image_publisher_node
+```
+
+Start YOLO detector:
+
+```bash
+ros2 run cv_perception yolo_detector_node
+```
+
+Monitor detection results:
+
+```bash
+ros2 topic echo /detections
+```
+
+### Technologies
+
+* ROS2 Jazzy
+* Ubuntu 24.04 (WSL2)
+* Python
+* OpenCV
+* YOLOv8
+* cv_bridge
+* sensor_msgs
+* ROS2 Topics
