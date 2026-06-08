@@ -2,6 +2,8 @@
 
 This project demonstrates a computer vision pipeline for traffic scene perception, including object detection, object counting, and multi-object tracking using YOLOv8 and ByteTrack.
 
+The project contains both standalone Python implementations and a ROS2-based perception pipeline. The ROS2 pipeline publishes image frames to a topic, performs YOLOv8 inference, and publishes detection results through ROS2 topics.
+
 ## Features
 
 - Image object detection
@@ -31,7 +33,7 @@ ros2-cv-perception/
 └── docs/
 ```
 
-## How to Run
+## Standalone Python Scripts
 
 Image detection:
 
@@ -92,7 +94,7 @@ outputs/
 
 ## ROS2 Perception Pipeline
 
-This project also includes a ROS2-based perception pipeline built on Ubuntu 24.04 and ROS2 Jazzy.
+The ROS2 implementation consists of an image publisher node and a YOLO detector node communicating through ROS2 topics.
 
 ### Pipeline Architecture
 
@@ -164,11 +166,12 @@ ros2 topic echo /detections
 
 ### Technologies
 
-* ROS2 Jazzy
-* Ubuntu 24.04 (WSL2)
-* Python
-* OpenCV
-* YOLOv8
-* cv_bridge
-* sensor_msgs
-* ROS2 Topics
+- ROS2 Jazzy
+- Ubuntu 24.04 (WSL2)
+- Python
+- OpenCV
+- YOLOv8 (Ultralytics)
+- ByteTrack
+- cv_bridge
+- ROS2 sensor_msgs
+- ROS2 Topics
