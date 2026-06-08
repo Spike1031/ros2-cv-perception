@@ -43,7 +43,7 @@ ros2-cv-perception/
 ├── outputs/                # Detection, counting, and tracking results
 ├── docs/                   # Demo images and documentation
 │
-├── ros2_cv_perception/     # ROS2 perception package
+├── ros2_cv_perception/     # ROS2 package for image publishing and YOLO detection
 │   ├── cv_perception/
 │   │   ├── hello_node.py
 │   │   ├── image_publisher_node.py
@@ -275,7 +275,9 @@ Ultralytics YOLO can be installed with:
 pip install ultralytics
 ```
 
-On Ubuntu 24.04, if the system Python environment blocks direct installation, use a virtual environment or install with caution using:
+It is recommended to use a Python virtual environment for installing additional Python packages.
+
+For quick testing on Ubuntu 24.04, `--break-system-packages` was used due to the externally managed Python environment:
 
 ```bash
 pip install ultralytics --break-system-packages
