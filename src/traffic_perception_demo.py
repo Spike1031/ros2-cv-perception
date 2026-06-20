@@ -17,6 +17,15 @@ CONF_THRES = 0.3
 IMG_SIZE = 640
 TRACKER_CONFIG = "bytetrack.yaml"
 
+SHOW_TRAJECTORY = False
+
+BOX_THICKNESS = 4
+LABEL_FONT_SCALE = 1.2
+LABEL_THICKNESS = 3
+
+PANEL_FONT_SCALE = 0.9
+PANEL_THICKNESS = 2
+
 # 只保留交通/自动驾驶相关类别，避免把杯子、椅子之类也统计进去
 TRAFFIC_CLASSES = {
     "person",
@@ -28,6 +37,17 @@ TRAFFIC_CLASSES = {
     "traffic light",
     "stop sign",
 }
+
+
+DRAW_TRAJECTORY_CLASSES = {
+    "person",
+    "bicycle",
+    "car",
+    "motorcycle",
+    "bus",
+    "truck",
+}
+
 
 # 每个目标最多保留最近多少帧轨迹点
 MAX_TRAJECTORY_LENGTH = 30
@@ -43,30 +63,33 @@ def get_color(track_id: int):
 
 
 def draw_label(frame, text, x, y, color):
-    """Draw a readable label with a dark background."""
+    """Draw a large readable label above the bounding box."""
     font = cv2.FONT_HERSHEY_SIMPLEX
-    font_scale = 0.9
-    thickness = 2
+    font_scale = LABEL_FONT_SCALE
+    thickness = LABEL_THICKNESS
 
     (text_w, text_h), baseline = cv2.getTextSize(text, font, font_scale, thickness)
 
-    # 防止标签贴到画面最上方被截断
-    y = max(y, text_h + baseline + 10)
+    # Make sure the label is not outside the top boundary
+    label_y = max(y, text_h + baseline + 10)
 
+    # White label background for clearer visualization
     cv2.rectangle(
         frame,
-        (x, y - text_h - baseline - 8),
-        (x + text_w + 10, y + 2),
-        color,
+        (x, label_y - text_h - baseline - 8),
+        (x + text_w + 12, label_y + 4),
+        (255, 255, 255),
         -1,
     )
+
+    # Text color uses the object color
     cv2.putText(
         frame,
         text,
-        (x + 5, y - 6),
+        (x + 6, label_y - 7),
         font,
         font_scale,
-        (255, 255, 255),
+        color,
         thickness,
         cv2.LINE_AA,
     )
@@ -75,10 +98,10 @@ def draw_label(frame, text, x, y, color):
 def draw_count_panel(frame, frame_id, current_counts, unique_ids_by_class):
     """Draw current-frame counts and unique tracked-object counts."""
     x0, y0 = 25, 45
-    line_h = 38
+    line_h = 45
 
     font = cv2.FONT_HERSHEY_SIMPLEX
-    font_scale = 0.9
+    font_scale = 1.1
     thickness = 2
 
     panel_lines = [
@@ -210,13 +233,14 @@ def main():
 
                     color = get_color(track_id)
 
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), color, BOX_THICKNESS)
                     label = f"ID {track_id} {class_name} {confidence:.2f}"
                     draw_label(frame, label, x1, y1, color)
 
                     points = list(trajectories[track_id])
-                    for i in range(1, len(points)):
-                        cv2.line(frame, points[i - 1], points[i], color, 2)
+                    if SHOW_TRAJECTORY and class_name in DRAW_TRAJECTORY_CLASSES and len(points) >= 8:
+                        for i in range(1, len(points)):
+                            cv2.line(frame, points[i - 1], points[i], color, 2)
 
                     csv_writer.writerow(
                         [
