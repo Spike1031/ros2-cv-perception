@@ -456,7 +456,13 @@ The current project supports both standalone computer vision scripts and a ROS2-
 
 ## Limitations
 
-The current pipeline is based on YOLOv8n and ByteTrack. In complex traffic scenes, false detections and ID switches may occur, especially under occlusion, reflections, small objects, and distant vehicles. The tracking count may be higher than the actual number of objects because the same object can receive multiple tracking IDs after occlusion or re-detection.
+The current pipeline is based on YOLOv8n and ByteTrack. Although it works for basic traffic-scene perception, several limitations can still be observed in complex road scenes.
+
+First, false detections may occur under reflections, shadows, partial occlusion, and complex vehicle interiors. For example, car windows or dark regions inside vehicles may occasionally be misclassified as `person`. This is mainly related to the limitations of the lightweight YOLOv8n model in complex traffic scenes, rather than a code-level error.
+
+Second, the unique tracked-object count can be higher than the actual number of physical objects. This is because ByteTrack may assign a new tracking ID to the same object after occlusion, re-detection, scale changes, or long-distance appearance changes. As a result, categories such as `car` or `truck` may show inflated unique tracking counts in crowded traffic scenes.
+
+These limitations provide useful directions for further improvement, such as model selection, confidence threshold tuning, tracking parameter adjustment, region-of-interest filtering, failure case analysis, and evaluation on public autonomous driving datasets.
 
 ## Future Work
 
