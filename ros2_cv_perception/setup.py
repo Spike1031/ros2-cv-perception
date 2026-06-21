@@ -23,6 +23,7 @@ setup(
             'hello_node = cv_perception.hello_node:main',
             'image_publisher_node = cv_perception.image_publisher_node:main',
             'yolo_detector_node = cv_perception.yolo_detector_node:main',
+            'traffic_perception_node = cv_perception.traffic_perception_node:main',
         ],
     },
 )
