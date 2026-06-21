@@ -1,20 +1,25 @@
-# ROS2-Based YOLOv8 Perception Pipeline
+# ROS2-Based Traffic Perception Pipeline
 
-This project demonstrates a computer vision perception pipeline for traffic scenes. It includes standalone Python scripts for object detection, object counting, and multi-object tracking, as well as a ROS2-based perception pipeline using image topics and detection result topics.
+This project implements a vision-based perception pipeline for traffic-scene understanding and autonomous driving scenarios. It integrates YOLOv8, ByteTrack, OpenCV, and ROS2 Jazzy to support object detection, multi-object tracking, object counting, trajectory visualization, CSV result export, and ROS2 topic-based image processing.
 
-The project is built around YOLOv8 and OpenCV, and is extended with ROS2 Jazzy to simulate a robotics-style perception workflow.
+The project includes both standalone Python scripts and a ROS2-based perception workflow. The standalone scripts are used for quick testing and result generation, while the ROS2 package simulates a robotics-style perception pipeline using image topics and perception result topics.
 
 ## Features
 
-* Image object detection with YOLOv8
-* Video object detection
-* Object counting on images
-* Object counting on videos
-* Multi-object tracking with ByteTrack
-* Output image and video saving
-* ROS2 image publishing node
-* ROS2 YOLO perception node
-* Detection result publishing through ROS2 topics
+* Image object detection using YOLOv8
+* Video object detection using OpenCV
+* Object counting on images and videos
+* Multi-object tracking using ByteTrack
+* Traffic-related class filtering
+* Tracking ID visualization
+* Frame-level object counting
+* Unique tracked-object counting
+* Optional object trajectory visualization
+* CSV export of frame-level detection and tracking results
+* ROS2 image publishing from video input
+* ROS2 traffic perception node with YOLOv8 and ByteTrack
+* ROS2 annotated image publishing
+* ROS2 summary publishing through topics
 
 ## Tech Stack
 
@@ -32,22 +37,24 @@ The project is built around YOLOv8 and OpenCV, and is extended with ROS2 Jazzy t
 
 ```text
 ros2-cv-perception/
-├── src/                    # Standalone Python scripts
+├── src/                              # Standalone Python scripts
 │   ├── test_yolo_image.py
 │   ├── detect_video.py
 │   ├── count_objects.py
 │   ├── count_video.py
-│   └── track_video.py
+│   ├── track_video.py
+│   └── traffic_perception_demo.py
 │
-├── data/                   # Input images and videos
-├── outputs/                # Detection, counting, and tracking results
-├── docs/                   # Demo images and documentation
+├── data/                             # Local input images and videos
+├── outputs/                          # Generated detection, counting, and tracking results
+├── docs/                             # Demo images and documentation assets
 │
-├── ros2_cv_perception/     # ROS2 package for image publishing and YOLO detection
+├── ros2_cv_perception/               # ROS2 package
 │   ├── cv_perception/
 │   │   ├── hello_node.py
 │   │   ├── image_publisher_node.py
-│   │   └── yolo_detector_node.py
+│   │   ├── yolo_detector_node.py
+│   │   └── traffic_perception_node.py
 │   ├── package.xml
 │   ├── setup.py
 │   ├── resource/
@@ -58,9 +65,68 @@ ros2-cv-perception/
 └── README.md
 ```
 
-## Standalone Python Scripts
+## Standalone Traffic Perception Demo
 
-The standalone scripts can be used without ROS2. They run object detection, counting, and tracking directly on local image or video files.
+The main standalone demo is:
+
+```bash
+python src/traffic_perception_demo.py
+```
+
+This script runs a complete traffic-scene perception pipeline on a local video file.
+
+### Input
+
+Put a traffic-scene video at:
+
+```text
+data/input.mp4
+```
+
+### Output
+
+The generated results are saved under:
+
+```text
+outputs/traffic_perception_demo/
+```
+
+The output files include:
+
+```text
+traffic_perception_demo.mp4
+tracking_results.csv
+```
+
+### Supported Traffic Classes
+
+The current demo focuses on traffic-related COCO classes:
+
+* person
+* bicycle
+* car
+* motorcycle
+* bus
+* truck
+* traffic light
+* stop sign
+
+### CSV Output
+
+The CSV file stores frame-level detection and tracking results.
+
+| Column             | Meaning                           |
+| ------------------ | --------------------------------- |
+| frame_id           | Frame index in the input video    |
+| track_id           | Tracking ID assigned by ByteTrack |
+| class_name         | Detected object class             |
+| confidence         | YOLOv8 detection confidence       |
+| x1, y1, x2, y2     | Bounding box coordinates          |
+| center_x, center_y | Center point of the bounding box  |
+
+## Other Standalone Scripts
+
+The repository also contains smaller standalone scripts for testing individual functions.
 
 ### Image Detection
 
@@ -92,22 +158,13 @@ python src/count_video.py
 python src/track_video.py
 ```
 
-## Output Results
+## Demo Results
 
-The generated results are saved under:
+### Traffic Perception Demo
 
-```text
-outputs/
-├── image_detection/
-├── video_detection/
-├── counting_image/
-├── counting_video/
-└── tracking_video/
-```
+![Traffic Perception Demo](docs/traffic_perception_demo.png)
 
-The output examples include detected bounding boxes, object category labels, confidence scores, object counts, and tracking IDs.
-
-## Demo
+The demo visualizes traffic-related object detection, tracking IDs, object counting, and frame-level perception results.
 
 ### Object Detection
 
@@ -123,9 +180,9 @@ The output examples include detected bounding boxes, object category labels, con
 
 ## ROS2 Perception Pipeline
 
-This project also includes a ROS2-based perception pipeline. The ROS2 part converts a video file into image messages, publishes them to a ROS2 topic, runs YOLOv8 detection in a separate node, and publishes detection results to another topic.
+This project includes a ROS2-based perception workflow. The ROS2 pipeline converts a video file into image messages, publishes them to `/image_raw`, performs YOLOv8-based perception in a separate node, and publishes annotated images and tracking summaries.
 
-### ROS2 Pipeline Architecture
+### Basic ROS2 YOLO Detection Pipeline
 
 ```text
 Video File
@@ -139,9 +196,24 @@ yolo_detector_node
 /detections
 ```
 
-### ROS2 Nodes
+### Full ROS2 Traffic Perception Pipeline
 
-#### image_publisher_node
+```text
+Video File
+    ↓
+image_publisher_node
+    ↓
+/image_raw
+    ↓
+traffic_perception_node
+    ↓
+/traffic_perception/annotated_image
+/traffic_perception/summary
+```
+
+## ROS2 Nodes
+
+### image_publisher_node
 
 This node reads frames from a local video file using OpenCV and publishes them as ROS2 image messages.
 
@@ -157,9 +229,9 @@ Message type:
 sensor_msgs/msg/Image
 ```
 
-#### yolo_detector_node
+### yolo_detector_node
 
-This node subscribes to `/image_raw`, converts ROS2 image messages back to OpenCV images using `cv_bridge`, runs YOLOv8 inference, and publishes detection count results.
+This node subscribes to `/image_raw`, converts ROS2 image messages into OpenCV images using `cv_bridge`, runs YOLOv8 inference, and publishes detection count results.
 
 Subscribed topic:
 
@@ -187,41 +259,89 @@ Detected 7 objects.
 Detected 5 objects.
 ```
 
+### traffic_perception_node
+
+This node subscribes to `/image_raw`, runs YOLOv8 detection and ByteTrack multi-object tracking, filters traffic-related classes, visualizes bounding boxes and tracking IDs, and publishes both annotated images and text summaries.
+
+Subscribed topic:
+
+```text
+/image_raw
+```
+
+Published topics:
+
+```text
+/traffic_perception/annotated_image
+/traffic_perception/summary
+```
+
+Message types:
+
+```text
+sensor_msgs/msg/Image
+std_msgs/msg/String
+```
+
+Example summary output:
+
+```text
+Frame 30 | Current objects: car:5, truck:2, person:1 | Unique tracked: car:9, truck:5, person:1, bus:1
+```
+
 ## Running the ROS2 Pipeline
 
-Before running the ROS2 nodes, source the ROS2 workspace:
+The ROS2 package should be built inside a ROS2 workspace.
+
+Example workspace structure:
+
+```text
+~/ros2_ws/
+├── src/
+│   └── ros2_cv_perception/
+├── build/
+├── install/
+└── log/
+```
+
+Build the package:
 
 ```bash
-source ~/ros2_ws/install/setup.bash
+cd ~/ros2_ws
+colcon build --packages-select cv_perception
+source install/setup.bash
 ```
 
 ### Terminal 1: Start the Image Publisher
 
 ```bash
+cd ~/ros2_ws
+source install/setup.bash
 ros2 run cv_perception image_publisher_node
 ```
 
-### Terminal 2: Start the YOLO Detector
+### Terminal 2: Start the Traffic Perception Node
 
 ```bash
-ros2 run cv_perception yolo_detector_node
+cd ~/ros2_ws
+source install/setup.bash
+ros2 run cv_perception traffic_perception_node
 ```
 
-### Terminal 3: Monitor Detection Results
+### Terminal 3: Monitor the Summary Topic
 
 ```bash
-ros2 topic echo /detections
+cd ~/ros2_ws
+source install/setup.bash
+ros2 topic echo /traffic_perception/summary
 ```
 
-Expected output:
+### Terminal 4: View Annotated Images
 
-```text
-data: Detected 8 objects.
----
-data: Detected 7 objects.
----
-data: Detected 5 objects.
----
+```bash
+cd ~/ros2_ws
+source install/setup.bash
+ros2 run rqt_image_view rqt_image_view /traffic_perception/annotated_image
 ```
 
 ## ROS2 Topics
@@ -237,6 +357,8 @@ Expected topics include:
 ```text
 /image_raw
 /detections
+/traffic_perception/annotated_image
+/traffic_perception/summary
 /parameter_events
 /rosout
 ```
@@ -245,6 +367,18 @@ You can check the image publishing rate with:
 
 ```bash
 ros2 topic hz /image_raw
+```
+
+You can inspect the annotated image topic with:
+
+```bash
+ros2 topic info /traffic_perception/annotated_image
+```
+
+Expected type:
+
+```text
+sensor_msgs/msg/Image
 ```
 
 ## Installation
@@ -261,6 +395,7 @@ For the ROS2 part, the project was tested with:
 Ubuntu 24.04
 ROS2 Jazzy
 Python 3.12
+WSL2
 ```
 
 Required ROS2 packages include:
@@ -269,18 +404,29 @@ Required ROS2 packages include:
 sudo apt install -y ros-jazzy-cv-bridge ros-jazzy-vision-opencv
 ```
 
+For image visualization:
+
+```bash
+sudo apt install -y ros-jazzy-rqt-image-view
+```
+
 Ultralytics YOLO can be installed with:
 
 ```bash
 pip install ultralytics
 ```
 
-It is recommended to use a Python virtual environment for installing additional Python packages.
+ByteTrack may require the `lap` package:
 
-For quick testing on Ubuntu 24.04, `--break-system-packages` was used due to the externally managed Python environment:
+```bash
+pip install "lap>=0.5.12"
+```
+
+For quick testing on Ubuntu 24.04, `--break-system-packages` may be needed due to the externally managed Python environment:
 
 ```bash
 pip install ultralytics --break-system-packages
+pip install "lap>=0.5.12" --break-system-packages
 ```
 
 If `cv_bridge` reports a NumPy compatibility issue, use NumPy 1.x:
@@ -299,19 +445,25 @@ Recommended ignored files include:
 *.pt
 *.mp4
 *.avi
+*.mov
 outputs/
 __pycache__/
 ```
 
 ## Current Status
 
-The current project supports both standalone computer vision scripts and a ROS2-based perception pipeline. The ROS2 pipeline has been tested with a video input, image topic publishing, YOLOv8 inference, and detection result publishing through `/detections`.
+The current project supports both standalone computer vision scripts and a ROS2-based traffic perception pipeline. The standalone pipeline supports traffic-scene object detection, multi-object tracking, object counting, optional trajectory visualization, and CSV result export. The ROS2 pipeline has been tested with video input, image topic publishing, YOLOv8 and ByteTrack inference, annotated image publishing, and tracking summary publishing.
+
+## Limitations
+
+The current pipeline is based on YOLOv8n and ByteTrack. In complex traffic scenes, false detections and ID switches may occur, especially under occlusion, reflections, small objects, and distant vehicles. The tracking count may be higher than the actual number of objects because the same object can receive multiple tracking IDs after occlusion or re-detection.
 
 ## Future Work
 
-* Publish detailed bounding box results instead of only object counts
-* Add a ROS2 tracking node
-* Publish tracking IDs through a ROS2 topic
-* Add a visualization node for annotated images
-* Support live camera input when camera access is available
-* Add launch files for starting the full pipeline with one command
+* Add launch files for starting the full ROS2 pipeline with one command
+* Add configurable parameters for video path, confidence threshold, and visualization options
+* Export ROS2 tracking results to CSV
+* Add region-of-interest based traffic counting
+* Evaluate the pipeline on public autonomous driving datasets such as KITTI or BDD100K
+* Add failure case analysis for occlusion, small objects, and ID switching
+* Extend the perception pipeline toward sensor fusion or 3D perception in future work
